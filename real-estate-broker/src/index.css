@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@300;400;500&family=Roboto+Mono:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-game-bg text-text-dark font-roboto;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 bg-luxury-gold text-text-dark font-montserrat font-medium rounded-lg hover:bg-yellow-500 transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply px-6 py-3 border-2 border-property-blue text-property-blue font-montserrat font-medium rounded-lg hover:bg-property-blue hover:text-white transition-colors duration-200;
+  }
+  
+  .card {
+    @apply bg-card-bg rounded-lg shadow-lg p-4;
+  }
+  
+  .district-card {
+    @apply bg-map-bg rounded-lg shadow-md p-4 border-2 border-transparent hover:border-luxury-gold transition-all duration-200;
+  }
+}

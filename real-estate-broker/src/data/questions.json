@@ -1,0 +1,94 @@
+{
+  "questions": [
+    {
+      "id": "q1",
+      "title": "Capital Cities",
+      "question": "What is the capital of Saudi Arabia?",
+      "options": ["Riyadh", "Jeddah", "Mecca", "Medina"],
+      "hint": "It's the largest city in Saudi Arabia",
+      "correctAnswer": "Riyadh",
+      "difficulty": "easy"
+    },
+    {
+      "id": "q2",
+      "title": "Geography",
+      "question": "Which sea borders Saudi Arabia to the west?",
+      "options": ["Arabian Sea", "Red Sea", "Mediterranean Sea", "Persian Gulf"],
+      "hint": "It separates Africa from Asia",
+      "correctAnswer": "Red Sea",
+      "difficulty": "medium"
+    },
+    {
+      "id": "q3",
+      "title": "Mathematics",
+      "question": "What is 15% of 2,000,000?",
+      "options": ["300,000", "200,000", "250,000", "350,000"],
+      "hint": "15% = 0.15",
+      "correctAnswer": "300,000",
+      "difficulty": "medium"
+    },
+    {
+      "id": "q4",
+      "title": "History",
+      "question": "In what year was the Kingdom of Saudi Arabia founded?",
+      "options": ["1932", "1925", "1940", "1920"],
+      "hint": "It was in the early 1930s",
+      "correctAnswer": "1932",
+      "difficulty": "hard"
+    },
+    {
+      "id": "q5",
+      "title": "Economy",
+      "question": "What is the currency of Qatar?",
+      "options": ["Qatari Riyal", "Dirham", "Dinar", "Saudi Riyal"],
+      "hint": "It includes the country name",
+      "correctAnswer": "Qatari Riyal",
+      "difficulty": "easy"
+    },
+    {
+      "id": "q6",
+      "title": "Science",
+      "question": "What is the chemical symbol for Gold?",
+      "options": ["Au", "Ag", "Go", "Gd"],
+      "hint": "It comes from the Latin word 'Aurum'",
+      "correctAnswer": "Au",
+      "difficulty": "medium"
+    },
+    {
+      "id": "q7",
+      "title": "Technology",
+      "question": "What does 'AI' stand for?",
+      "options": ["Artificial Intelligence", "Advanced Interface", "Automated Industry", "Applied Innovation"],
+      "hint": "It relates to machine learning",
+      "correctAnswer": "Artificial Intelligence",
+      "difficulty": "easy"
+    },
+    {
+      "id": "q8",
+      "title": "Business",
+      "question": "What does ROI stand for in business?",
+      "options": ["Return on Investment", "Rate of Interest", "Revenue of Income", "Risk of Investment"],
+      "hint": "It measures profitability",
+      "correctAnswer": "Return on Investment",
+      "difficulty": "medium"
+    },
+    {
+      "id": "q9",
+      "title": "Real Estate",
+      "question": "What is a mortgage?",
+      "options": ["A loan to buy property", "A type of insurance", "A rental agreement", "A property tax"],
+      "hint": "It's secured by the property itself",
+      "correctAnswer": "A loan to buy property",
+      "difficulty": "easy"
+    },
+    {
+      "id": "q10",
+      "title": "Architecture",
+      "question": "Which city is home to the Burj Khalifa?",
+      "options": ["Dubai", "Abu Dhabi", "Doha", "Kuwait City"],
+      "hint": "It's in the UAE",
+      "correctAnswer": "Dubai",
+      "difficulty": "easy"
+    }
+  ]
+}
