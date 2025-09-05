@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useGame } from '../contexts/GameContext.jsx';
 import { MAPS } from '../data/arabicMaps.js';
+import TeamSetup from './TeamSetup.jsx';
 
 function GameSetup() {
   const { dispatch, QUESTION_CATEGORIES } = useGame();
@@ -8,6 +9,8 @@ function GameSetup() {
   const [teamCount, setTeamCount] = useState(2);
   const [difficulty, setDifficulty] = useState('medium');
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [showTeamSetup, setShowTeamSetup] = useState(false);
+  const [configuredTeams, setConfiguredTeams] = useState(null);
   
   const handleCategoryToggle = (categoryId) => {
     if (selectedCategories.includes(categoryId)) {
@@ -17,9 +20,19 @@ function GameSetup() {
     }
   };
   
+  const handleTeamsConfigured = (teams) => {
+    setConfiguredTeams(teams);
+    setShowTeamSetup(false);
+  };
+  
   const handleStartGame = () => {
     if (selectedCategories.length === 0) {
       alert('يرجى اختيار فئة واحدة على الأقل');
+      return;
+    }
+    
+    if (!configuredTeams) {
+      setShowTeamSetup(true);
       return;
     }
     
@@ -29,42 +42,57 @@ function GameSetup() {
         mapId: selectedMap,
         teamCount,
         difficulty,
-        selectedCategories
+        selectedCategories,
+        customTeams: configuredTeams
       }
     });
   };
   
+  if (showTeamSetup) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-8 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute top-20 left-20 w-72 h-72 bg-blue-200/20 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl animate-float-delayed"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-200/10 rounded-full blur-3xl"></div>
+        
+        <div className="relative z-10 bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl p-8 max-w-4xl w-full border border-white/50">
+          <TeamSetup 
+            teamCount={teamCount} 
+            onTeamsConfigured={handleTeamsConfigured}
+          />
+          <button
+            onClick={() => setShowTeamSetup(false)}
+            className="w-full mt-6 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-montserrat font-medium text-sm py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+          >
+            رجوع
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
   return (
-    <div className="min-h-screen flex items-center justify-center p-8">
-      <div className="bg-card-bg rounded-2xl shadow-2xl p-8 max-w-4xl w-full">
+    <div className="min-h-screen flex items-center justify-center p-8 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute top-20 left-20 w-72 h-72 bg-blue-200/20 rounded-full blur-3xl animate-float"></div>
+      <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl animate-float-delayed"></div>
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-200/10 rounded-full blur-3xl"></div>
+      
+      <div className="relative z-10 bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl p-8 max-w-4xl w-full border border-white/50">
         <h1 className="text-4xl font-montserrat font-bold text-center mb-8 text-luxury-gold">
           سمسار العقارات
         </h1>
         
         <div className="space-y-6">
-          {/* Map Selection */}
-          <div>
-            <label className="block text-lg font-montserrat font-semibold mb-3">
-              اختر خريطة المدينة
-            </label>
-            <div className="grid grid-cols-3 gap-4">
-              {Object.entries(MAPS).map(([id, map]) => (
-                <button
-                  key={id}
-                  onClick={() => setSelectedMap(id)}
-                  className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                    selectedMap === id
-                      ? 'border-luxury-gold bg-premium-bg'
-                      : 'border-gray-300 hover:border-luxury-gold'
-                  }`}
-                >
-                  <div className="text-lg font-montserrat font-medium">{map.name}</div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    {map.districts.length} أحياء
-                  </div>
-                </button>
-              ))}
-            </div>
+          {/* City Info */}
+          <div className="text-center bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 shadow-lg border border-indigo-200/30">
+            <h2 className="text-2xl font-montserrat font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+              مدينة الرياض
+            </h2>
+            <p className="text-gray-600 font-medium">
+              {MAPS.riyadh.districts.length} أحياء • {MAPS.riyadh.districts.length * 3} عقار
+            </p>
           </div>
           
           {/* Team Count */}
@@ -76,7 +104,10 @@ function GameSetup() {
               {[2, 3, 4].map(count => (
                 <button
                   key={count}
-                  onClick={() => setTeamCount(count)}
+                  onClick={() => {
+                    setTeamCount(count);
+                    setConfiguredTeams(null); // Reset team configuration when count changes
+                  }}
                   className={`p-4 rounded-lg border-2 transition-all duration-200 ${
                     teamCount === count
                       ? 'border-luxury-gold bg-premium-bg'
@@ -88,6 +119,36 @@ function GameSetup() {
               ))}
             </div>
           </div>
+          
+          {/* Show configured teams if any */}
+          {configuredTeams && (
+            <div className="relative bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 shadow-lg border border-indigo-200/30 overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-montserrat font-bold text-lg bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">الفرق المكونة:</h3>
+                  <button
+                    onClick={() => setShowTeamSetup(true)}
+                    className="text-sm font-medium text-indigo-600 hover:text-purple-600 transition-colors duration-200 flex items-center gap-1"
+                  >
+                    <span>تعديل</span>
+                    <span className="text-lg">✏️</span>
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {configuredTeams.map(team => (
+                    <div key={team.id} className={`relative px-4 py-3 rounded-xl ${team.bgColor} text-white shadow-md hover:shadow-xl transform hover:scale-105 transition-all duration-200 group overflow-hidden`}>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="relative z-10 flex items-center gap-3">
+                        <span className="text-2xl filter drop-shadow-md">{team.icon}</span>
+                        <span className="font-montserrat font-semibold">{team.name}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Categories Selection */}
           <div>
@@ -117,15 +178,16 @@ function GameSetup() {
           </div>
           
           {/* Game Rules Summary */}
-          <div className="bg-map-bg rounded-lg p-4 mt-6">
-            <h3 className="font-montserrat font-semibold text-lg mb-2">قوانين اللعبة</h3>
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 mt-6 shadow-lg border border-indigo-200/30">
+            <h3 className="font-montserrat font-semibold text-lg mb-3 text-gray-800">قوانين اللعبة</h3>
             <ul className="space-y-1 text-sm">
               <li>• كل فريق يبدأ بـ 10 مليون ريال</li>
               <li>• المزايدة بزيادات 50,000 ريال</li>
+              <li>• المبلغ المدفوع في المزاد يُخصم حتى لو كانت الإجابة خاطئة</li>
               <li>• أجب على السؤال بشكل صحيح لتأمين العقار</li>
-              <li>• اجمع 3 عقارات في نفس الحي لمضاعفة النقاط</li>
+              <li>• امتلك جميع العقارات في حي واحد لمضاعفة نقاط الحي</li>
+              <li>• احصل على مكافأة 10% إضافية لامتلاك عقار واحد على الأقل في كل حي</li>
               <li>• استخدم البطاقات الخاصة بشكل استراتيجي</li>
-              <li>• مدة اللعبة: 45 دقيقة</li>
               <li>• الأسئلة المستخدمة لن تتكرر في الألعاب المستقبلية</li>
             </ul>
           </div>
@@ -136,7 +198,7 @@ function GameSetup() {
             disabled={selectedCategories.length === 0}
             className="w-full btn-primary text-xl py-4 mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            ابدأ اللعبة
+            {!configuredTeams ? 'تخصيص الفرق والبدء' : 'ابدأ اللعبة'}
           </button>
           
           {/* Reset Questions Button */}

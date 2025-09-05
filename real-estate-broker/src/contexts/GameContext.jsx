@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { MAPS, calculateBlockPoints } from '../data/arabicMaps.js';
-import { QUESTION_CATEGORIES, getQuestionsByCategories, getRandomQuestionFromCategory } from '../data/arabicQuestions.js';
+import { QUESTION_CATEGORIES, getQuestionsByCategories, getRandomQuestionFromCategory, getDifficultyByBlockPoints } from '../data/arabicQuestions.js';
 
 const GameContext = createContext();
 
@@ -16,13 +16,12 @@ const INITIAL_STATE = {
   usedCategoriesInRound: [],
   questions: [],
   usedQuestions: JSON.parse(localStorage.getItem('usedQuestions') || '[]'),
-  gameTimer: 45 * 60, // 45 minutes in seconds
   difficulty: 'medium',
   powerCards: {
-    showOptions: 3, // New power card for showing multiple choice options
-    loan: 1,
-    deleteOption: 1
-  }
+    showOptions: 3, // Show multiple choice options (3 times)
+    showHint: 2 // Show hint (2 times)
+  },
+  blockedBlocks: [] // Blocks that were not answered correctly
 };
 
 const TEAM_COLORS = [
@@ -35,9 +34,22 @@ const TEAM_COLORS = [
 const gameReducer = (state, action) => {
   switch (action.type) {
     case 'SETUP_GAME':
-      const { mapId, teamCount, difficulty, selectedCategories } = action.payload;
+      const { mapId, teamCount, difficulty, selectedCategories, customTeams } = action.payload;
       const selectedMap = MAPS[mapId];
-      const teams = Array.from({ length: teamCount }, (_, i) => ({
+      
+      // Use custom teams if provided, otherwise use defaults
+      const teams = customTeams ? customTeams.map((team, i) => ({
+        id: team.id || `team-${i + 1}`,
+        name: team.name,
+        color: team.color,
+        bgColor: team.bgColor,
+        hex: team.hex,
+        icon: team.icon,
+        money: 10000000, // 10 million
+        score: 0,
+        ownedBlocks: [],
+        powerCards: { ...INITIAL_STATE.powerCards }
+      })) : Array.from({ length: teamCount }, (_, i) => ({
         id: `team-${i + 1}`,
         name: TEAM_COLORS[i].name,
         color: TEAM_COLORS[i].color,
@@ -70,11 +82,12 @@ const gameReducer = (state, action) => {
         selectedCategories,
         availableCategories: [...selectedCategories],
         usedCategoriesInRound: [],
-        questions
+        questions,
+        blockedBlocks: []
       };
       
     case 'START_AUCTION':
-      const availableBlocks = state.blocks.filter(b => !b.owner);
+      const availableBlocks = state.blocks.filter(b => !b.owner && !state.blockedBlocks.includes(b.id));
       if (availableBlocks.length === 0) {
         return { ...state, gamePhase: 'ended' };
       }
@@ -121,9 +134,46 @@ const gameReducer = (state, action) => {
     case 'SELECT_QUESTION_CATEGORY':
       const { categoryId } = action.payload;
       
-      const question = getRandomQuestionFromCategory(categoryId, state.usedQuestions);
+      // Get the difficulty based on the current block's points
+      const currentBlockPoints = state.currentAuction?.block?.points || 1000;
+      const questionDifficulty = getDifficultyByBlockPoints(currentBlockPoints);
       
-      if (!question) return state;
+      const question = getRandomQuestionFromCategory(categoryId, state.usedQuestions, questionDifficulty);
+      
+      if (!question) {
+        // Check if we have questions in other available categories
+        let hasQuestionsInAnyCategory = false;
+        for (const catId of state.availableCategories) {
+          if (catId !== categoryId) {
+            const testQuestion = getRandomQuestionFromCategory(catId, state.usedQuestions, questionDifficulty);
+            if (testQuestion) {
+              hasQuestionsInAnyCategory = true;
+              break;
+            }
+          }
+        }
+        
+        if (!hasQuestionsInAnyCategory) {
+          // Reset all used questions if no questions available in any category
+          localStorage.removeItem('usedQuestions');
+          const resetQuestion = getRandomQuestionFromCategory(categoryId, [], questionDifficulty);
+          if (resetQuestion) {
+            return {
+              ...state,
+              currentQuestion: resetQuestion,
+              availableCategories: state.availableCategories.filter(c => c !== categoryId),
+              usedCategoriesInRound: [...state.usedCategoriesInRound, categoryId],
+              usedQuestions: []
+            };
+          }
+        }
+        
+        // Remove the category that has no questions
+        return {
+          ...state,
+          availableCategories: state.availableCategories.filter(c => c !== categoryId)
+        };
+      }
       
       // Remove the selected category from available categories
       const newAvailableCategories = state.availableCategories.filter(c => c !== categoryId);
@@ -142,45 +192,88 @@ const gameReducer = (state, action) => {
       const newUsedQuestions = [...state.usedQuestions, questionId];
       localStorage.setItem('usedQuestions', JSON.stringify(newUsedQuestions));
       
-      if (!isCorrect || !state.currentAuction) {
-        return {
-          ...state,
-          currentAuction: null,
-          currentQuestion: null,
-          usedQuestions: newUsedQuestions
-        };
-      }
+      // Get bidding team and amount
+      const biddingTeam = state.teams.find(t => t.id === answeringTeamId);
+      const bidAmount = state.currentAuction?.currentBid || 0;
       
-      const updatedBlocks = state.blocks.map(block =>
-        block.id === state.currentAuction.block.id
-          ? { ...block, owner: answeringTeamId }
-          : block
-      );
+      let updatedBlocks = state.blocks;
+      let updatedTeams = state.teams;
       
-      const updatedTeams = state.teams.map(team => {
-        if (team.id === answeringTeamId) {
-          const newOwnedBlocks = [...team.ownedBlocks, state.currentAuction.block.id];
-          const bidAmount = state.currentAuction.currentBid;
-          const blockPoints = state.currentAuction.block.points;
+      if (isCorrect && state.currentAuction) {
+        // Update block ownership only if answer is correct
+        updatedBlocks = state.blocks.map(block =>
+          block.id === state.currentAuction.block.id
+            ? { ...block, owner: answeringTeamId }
+            : block
+        );
+        
+        // Update teams - deduct money and add points if correct
+        updatedTeams = state.teams.map(team => {
+          if (team.id === answeringTeamId) {
+            const newOwnedBlocks = [...team.ownedBlocks, state.currentAuction.block.id];
+            
+            return {
+              ...team,
+              money: team.money - bidAmount, // Deduct money
+              ownedBlocks: newOwnedBlocks
+            };
+          }
+          return team;
+        });
+        
+        // Recalculate all teams' scores with new scoring system
+        updatedTeams = updatedTeams.map(team => {
+          let totalScore = 0;
           
-          // Check for district bonus
-          const blocksInDistrict = updatedBlocks.filter(
-            b => b.districtId === state.currentAuction.block.districtId && 
-                 b.owner === answeringTeamId
+          // Calculate points for each district
+          state.selectedMap.districts.forEach(district => {
+            const teamBlocksInDistrict = updatedBlocks.filter(
+              b => b.districtId === district.id && b.owner === team.id
+            );
+            
+            if (teamBlocksInDistrict.length > 0) {
+              const districtPoints = teamBlocksInDistrict.reduce((sum, block) => sum + block.points, 0);
+              
+              // Double points if team owns entire district (all blocks)
+              const ownsEntireDistrict = teamBlocksInDistrict.length === district.blocks.length;
+              totalScore += ownsEntireDistrict ? districtPoints * 2 : districtPoints;
+            }
+          });
+          
+          // Check if team has at least one property in each district
+          const districtsWithProperty = state.selectedMap.districts.filter(district =>
+            updatedBlocks.some(b => b.districtId === district.id && b.owner === team.id)
           ).length;
           
-          const bonusMultiplier = blocksInDistrict >= 3 ? 2 : 1;
-          const totalPoints = blockPoints * bonusMultiplier;
+          const hasPropertyInAllDistricts = districtsWithProperty === state.selectedMap.districts.length;
+          
+          // Apply 10% bonus if team has property in all districts
+          if (hasPropertyInAllDistricts) {
+            totalScore = Math.floor(totalScore * 1.1);
+          }
           
           return {
             ...team,
-            money: team.money - bidAmount,
-            score: team.score + totalPoints,
-            ownedBlocks: newOwnedBlocks
+            score: totalScore
           };
-        }
-        return team;
-      });
+        });
+      } else {
+        // If answer is incorrect, only deduct money, no property or points
+        updatedTeams = state.teams.map(team => {
+          if (team.id === answeringTeamId) {
+            return {
+              ...team,
+              money: team.money - bidAmount // Deduct money even for wrong answer
+            };
+          }
+          return team;
+        });
+      }
+      
+      // Add the block to blockedBlocks if answer was wrong
+      const newBlockedBlocks = !isCorrect && state.currentAuction?.block?.id 
+        ? [...state.blockedBlocks, state.currentAuction.block.id]
+        : state.blockedBlocks;
       
       return {
         ...state,
@@ -188,7 +281,8 @@ const gameReducer = (state, action) => {
         blocks: updatedBlocks,
         currentAuction: null,
         currentQuestion: null,
-        usedQuestions: newUsedQuestions
+        usedQuestions: newUsedQuestions,
+        blockedBlocks: newBlockedBlocks
       };
       
     case 'USE_POWER_CARD':
@@ -196,31 +290,19 @@ const gameReducer = (state, action) => {
       
       const teamsWithCard = state.teams.map(team => {
         if (team.id === cardTeamId && team.powerCards[cardType] > 0) {
-          const updatedTeam = {
+          return {
             ...team,
             powerCards: {
               ...team.powerCards,
               [cardType]: team.powerCards[cardType] - 1
             }
           };
-          
-          if (cardType === 'loan') {
-            updatedTeam.money += 500000;
-          }
-          
-          return updatedTeam;
         }
         return team;
       });
       
       return { ...state, teams: teamsWithCard };
       
-    case 'UPDATE_TIMER':
-      const newTime = state.gameTimer - 1;
-      if (newTime <= 0) {
-        return { ...state, gameTimer: 0, gamePhase: 'ended' };
-      }
-      return { ...state, gameTimer: newTime };
       
     case 'END_GAME':
       return { ...state, gamePhase: 'ended' };
@@ -228,6 +310,12 @@ const gameReducer = (state, action) => {
     case 'RESET_USED_QUESTIONS':
       localStorage.removeItem('usedQuestions');
       return { ...state, usedQuestions: [] };
+      
+    case 'RESTART_GAME':
+      return {
+        ...INITIAL_STATE,
+        usedQuestions: state.usedQuestions // Keep used questions unless explicitly reset
+      };
       
     default:
       return state;
@@ -237,15 +325,6 @@ const gameReducer = (state, action) => {
 export const GameProvider = ({ children }) => {
   const [state, dispatch] = useReducer(gameReducer, INITIAL_STATE);
   
-  useEffect(() => {
-    if (state.gamePhase === 'playing' && state.gameTimer > 0) {
-      const timer = setInterval(() => {
-        dispatch({ type: 'UPDATE_TIMER' });
-      }, 1000);
-      
-      return () => clearInterval(timer);
-    }
-  }, [state.gamePhase, state.gameTimer]);
   
   const value = {
     state,

@@ -1,0 +1,17 @@
+{
+  "total_questions": 204,
+  "categories": 10,
+  "difficulty_distribution": {
+    "سهل": 58,
+    "متوسط": 97,
+    "صعب": 49
+  },
+  "points_distribution": {
+    "5": 58,
+    "10": 97,
+    "15": 49
+  },
+  "average_options": 4,
+  "unique_answers": 195,
+  "extraction_date": "2025-09-05T15:27:39.196339"
+}

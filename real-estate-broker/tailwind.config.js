@@ -24,9 +24,35 @@ export default {
         'error': '#F44336',
       },
       fontFamily: {
-        'montserrat': ['Montserrat', 'sans-serif'],
-        'roboto': ['Roboto', 'sans-serif'],
-        'roboto-mono': ['Roboto Mono', 'monospace'],
+        'montserrat': ['Tajawal', 'sans-serif'],
+        'roboto': ['Tajawal', 'sans-serif'],
+        'roboto-mono': ['Tajawal', 'monospace'],
+      },
+      animation: {
+        'float': 'float 3s ease-in-out infinite',
+        'float-delayed': 'float 3s ease-in-out 1s infinite',
+        'glow': 'glow 2s ease-in-out infinite',
+        'shake': 'shake 0.5s ease-in-out',
+        'shimmer': 'shimmer 1.5s ease-in-out',
+      },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-20px)' },
+        },
+        glow: {
+          '0%, 100%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' },
+          '50%': { boxShadow: '0 0 40px rgba(59, 130, 246, 0.8)' },
+        },
+        shake: {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '25%': { transform: 'translateX(-5px)' },
+          '75%': { transform: 'translateX(5px)' },
+        },
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(200%)' },
+        }
       },
     },
   },

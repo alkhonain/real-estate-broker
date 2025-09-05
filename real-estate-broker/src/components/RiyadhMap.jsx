@@ -47,7 +47,7 @@ function RiyadhMap() {
           
           {/* North (العليا) */}
           <g id="olaya">
-            <text x="400" y="80" textAnchor="middle" className="fill-text-dark font-montserrat font-bold text-lg">العليا</text>
+            <text x="400" y="80" textAnchor="middle" className="fill-text-dark font-bold" style={{ fontSize: '18px' }}>العليا</text>
             <rect x="280" y="100" width="60" height="60" fill={getBlockColor('olaya', 0)} stroke="#333" strokeWidth="2" 
                   className={isInAuction('olaya', 0) ? 'animate-pulse' : ''} rx="5" />
             <rect x="350" y="100" width="60" height="60" fill={getBlockColor('olaya', 1)} stroke="#333" strokeWidth="2"
@@ -62,7 +62,7 @@ function RiyadhMap() {
           
           {/* East (الملز) */}
           <g id="malaz">
-            <text x="600" y="250" textAnchor="middle" className="fill-text-dark font-montserrat font-bold text-lg">الملز</text>
+            <text x="600" y="250" textAnchor="middle" className="fill-text-dark font-bold" style={{ fontSize: '18px' }}>الملز</text>
             <rect x="550" y="270" width="50" height="50" fill={getBlockColor('malaz', 0)} stroke="#333" strokeWidth="2"
                   className={isInAuction('malaz', 0) ? 'animate-pulse' : ''} rx="5" />
             <rect x="610" y="270" width="50" height="50" fill={getBlockColor('malaz', 1)} stroke="#333" strokeWidth="2"
@@ -77,7 +77,7 @@ function RiyadhMap() {
           
           {/* West (الدرعية) */}
           <g id="diriyah">
-            <text x="150" y="250" textAnchor="middle" className="fill-text-dark font-montserrat font-bold text-lg">الدرعية</text>
+            <text x="150" y="250" textAnchor="middle" className="fill-text-dark font-bold" style={{ fontSize: '18px' }}>الدرعية</text>
             <rect x="100" y="270" width="55" height="55" fill={getBlockColor('diriyah', 0)} stroke="#333" strokeWidth="2"
                   className={isInAuction('diriyah', 0) ? 'animate-pulse' : ''} rx="5" />
             <rect x="165" y="270" width="55" height="55" fill={getBlockColor('diriyah', 1)} stroke="#333" strokeWidth="2"
@@ -92,7 +92,7 @@ function RiyadhMap() {
           
           {/* Center (النخيل) */}
           <g id="nakheel">
-            <text x="400" y="300" textAnchor="middle" className="fill-text-dark font-montserrat font-bold text-lg">النخيل</text>
+            <text x="400" y="300" textAnchor="middle" className="fill-text-dark font-bold" style={{ fontSize: '18px' }}>النخيل</text>
             <rect x="340" y="320" width="50" height="50" fill={getBlockColor('nakheel', 0)} stroke="#333" strokeWidth="2"
                   className={isInAuction('nakheel', 0) ? 'animate-pulse' : ''} rx="5" />
             <rect x="400" y="320" width="50" height="50" fill={getBlockColor('nakheel', 1)} stroke="#333" strokeWidth="2"
@@ -107,7 +107,7 @@ function RiyadhMap() {
           
           {/* South (حي السفارات) */}
           <g id="diplomatic">
-            <text x="400" y="480" textAnchor="middle" className="fill-text-dark font-montserrat font-bold text-lg">حي السفارات</text>
+            <text x="400" y="480" textAnchor="middle" className="fill-text-dark font-bold" style={{ fontSize: '18px' }}>حي السفارات</text>
             <rect x="280" y="500" width="55" height="55" fill={getBlockColor('diplomatic', 0)} stroke="#333" strokeWidth="2"
                   className={isInAuction('diplomatic', 0) ? 'animate-pulse' : ''} rx="5" />
             <rect x="345" y="500" width="55" height="55" fill={getBlockColor('diplomatic', 1)} stroke="#333" strokeWidth="2"

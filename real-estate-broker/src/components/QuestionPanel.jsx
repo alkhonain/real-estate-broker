@@ -4,23 +4,41 @@ import { QUESTION_CATEGORIES } from '../data/arabicQuestions.js';
 
 function QuestionPanel({ question, onAnswer, team }) {
   const { dispatch } = useGame();
-  const [userAnswer, setUserAnswer] = useState('');
+  const [showAnswer, setShowAnswer] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
-  const [timer, setTimer] = useState(30);
-  const [isAnswered, setIsAnswered] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
+  const [timer, setTimer] = useState(60);
+  const [selectedOption, setSelectedOption] = useState('');
   
   // Generate fake options for the question
   const generateOptions = () => {
+    // If the question has predefined options, use them
+    if (question.options && question.options.length >= 4) {
+      // Fisher-Yates shuffle for more stable randomization
+      const shuffled = [...question.options];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+    
     const options = [question.answer];
-    const fakeAnswers = [
-      'باريس', 'لندن', 'برلين', 'مدريد', 'روما', 'أثينا', 'فيينا', 'براغ',
-      '100', '200', '300', '400', '500', '1000', '2000', '5000',
-      'الأحمر', 'الأزرق', 'الأخضر', 'الأصفر', 'البرتقالي', 'البنفسجي',
-      '2020', '2021', '2022', '2023', '2024', '2025',
-      'محمد', 'أحمد', 'علي', 'حسن', 'خالد', 'عبدالله'
-    ];
+    const categoryFakeAnswers = {
+      geography: ['باريس', 'لندن', 'برلين', 'مدريد', 'روما', 'أثينا', 'موسكو', 'واشنطن'],
+      history: ['1920', '1935', '1940', '1945', '1950', '1960', '1970', '1980'],
+      science: ['الهيدروجين', 'الأكسجين', 'النيتروجين', 'الكربون', 'الحديد', 'النحاس'],
+      sports: ['10', '12', '9', '7', '6', '8', '15', '20'],
+      culture: ['شكسبير', 'دانتي', 'هوميروس', 'المتنبي', 'أبو تمام', 'جرير'],
+      religion: ['3', '4', '6', '7', '8', '10', '12', '15'],
+      technology: ['2010', '2005', '2008', '2012', '2015', '2018', '2020', '2022'],
+      arabic: ['فعل', 'اسم', 'حرف', 'ظرف', 'أداة', 'ضمير', 'صفة', 'مصدر'],
+      math: ['100', '200', '250', '150', '75', '125', '175', '225'],
+      saudi: ['جدة', 'مكة', 'المدينة', 'الدمام', 'الخبر', 'تبوك', 'أبها', 'الطائف']
+    };
+    
+    const fakeAnswers = categoryFakeAnswers[question.categoryId] || 
+      ['إجابة 1', 'إجابة 2', 'إجابة 3', 'إجابة 4', 'إجابة 5'];
     
     while (options.length < 4) {
       const randomFake = fakeAnswers[Math.floor(Math.random() * fakeAnswers.length)];
@@ -29,169 +47,261 @@ function QuestionPanel({ question, onAnswer, team }) {
       }
     }
     
-    return options.sort(() => Math.random() - 0.5);
+    // Fisher-Yates shuffle for more stable randomization
+    const shuffled = [...options];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   };
   
-  const [options] = useState(generateOptions());
+  const [options] = useState(() => generateOptions());
   
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimer(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          if (!isAnswered) {
-            handleSubmit();
+    if (!showAnswer) {
+      const interval = setInterval(() => {
+        setTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            // Don't auto-show answer anymore
+            return 0;
           }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, [isAnswered]);
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [showAnswer]);
   
-  const handleSubmit = () => {
-    if (isAnswered) return;
-    
-    const correct = userAnswer.trim().toLowerCase() === question.answer.toLowerCase();
-    setIsCorrect(correct);
-    setIsAnswered(true);
-    
-    setTimeout(() => {
-      onAnswer(correct, question.id);
-    }, correct ? 1000 : 2000);
+  const handleShowAnswer = () => {
+    setShowAnswer(true);
   };
   
-  const handlePowerCard = (cardType) => {
-    if (!team.powerCards[cardType] || team.powerCards[cardType] <= 0) return;
+  const handleAnswerResult = (isCorrect) => {
+    onAnswer(isCorrect, question.id);
+  };
+  
+  const handleShowOptions = () => {
+    if (!team.powerCards.showOptions || team.powerCards.showOptions <= 0) return;
     
     dispatch({
       type: 'USE_POWER_CARD',
       payload: {
         teamId: team.id,
-        cardType
+        cardType: 'showOptions'
       }
     });
     
-    if (cardType === 'showOptions') {
-      setShowOptions(true);
-    }
+    setShowOptions(true);
+    // Add 20 seconds when showing options
+    setTimer(prev => prev + 20);
   };
   
-  const categoryInfo = QUESTION_CATEGORIES[question.category];
+  const handleShowHint = () => {
+    if (!team.powerCards.showHint || team.powerCards.showHint <= 0) return;
+    
+    dispatch({
+      type: 'USE_POWER_CARD',
+      payload: {
+        teamId: team.id,
+        cardType: 'showHint'
+      }
+    });
+    
+    setShowHint(true);
+    // Add 20 seconds when showing hint
+    setTimer(prev => prev + 20);
+  };
+  
+  const categoryInfo = QUESTION_CATEGORIES[question.categoryId];
   
   return (
-    <div className="bg-card-bg rounded-lg shadow-lg p-6">
-      <div className="flex justify-between items-center mb-4">
+    <div className="relative overflow-hidden bg-gradient-to-br from-white via-purple-50 to-indigo-100 rounded-2xl shadow-2xl p-8 border border-purple-200/50">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-100/20 via-transparent to-indigo-100/20 pointer-events-none"></div>
+      <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-purple-300/20 to-transparent rounded-full blur-xl animate-pulse"></div>
+      <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-tr from-indigo-300/20 to-transparent rounded-full blur-xl animate-pulse delay-700"></div>
+      <div className="absolute -top-6 -left-6 w-24 h-24 bg-yellow-300/20 rounded-full blur-2xl animate-float"></div>
+      
+      <div className="relative z-10 flex justify-between items-start mb-6">
         <div>
-          <h3 className="text-2xl font-montserrat font-bold">
-            سؤال لـ {team.name}
+          <h3 className="text-3xl font-montserrat font-bold text-gray-800 mb-2">
+            سؤال لـ {team.name} {team.icon}
           </h3>
-          <div className={`inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-full ${categoryInfo.color} text-white text-sm`}>
-            <span>{categoryInfo.icon}</span>
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${categoryInfo.color} text-white text-sm font-medium shadow-md`}>
+            <span className="text-xl">{categoryInfo.icon}</span>
             <span>{categoryInfo.name}</span>
           </div>
         </div>
-        <div className={`text-3xl font-roboto-mono font-bold ${
-          timer <= 10 ? 'text-error animate-pulse' : 'text-text-dark'
+        <div className={`text-5xl font-roboto-mono font-bold ${
+          timer <= 10 ? 'text-red-500 animate-pulse' : 'text-gray-700'
         }`}>
-          {timer} ث
+          {timer}
         </div>
       </div>
       
       {/* Question */}
-      <div className="bg-premium-bg rounded-lg p-4 mb-4">
-        <div className="text-xl font-montserrat font-medium">
+      <div className="bg-gradient-to-r from-luxury-gold to-yellow-400 rounded-xl p-6 mb-6 shadow-lg">
+        <div className="text-2xl font-montserrat font-medium text-gray-900">
           {question.question}
         </div>
         
         {showHint && (
-          <div className="mt-2 text-sm text-gray-600 italic">
-            تلميح: {question.hint}
+          <div className="mt-4 bg-white bg-opacity-90 rounded-lg p-3 text-gray-700 italic">
+            💡 تلميح: {question.hint}
           </div>
         )}
       </div>
       
-      {/* Power Cards */}
-      {!isAnswered && (
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => handlePowerCard('showOptions')}
-            disabled={team.powerCards.showOptions <= 0 || showOptions}
-            className="text-sm px-3 py-1 bg-blue-100 rounded hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            إظهار خيارات ({team.powerCards.showOptions})
-          </button>
-          <button
-            onClick={() => setShowHint(true)}
-            disabled={showHint}
-            className="text-sm px-3 py-1 bg-yellow-100 rounded hover:bg-yellow-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            إظهار تلميح
-          </button>
-        </div>
-      )}
-      
-      {/* Answer Input or Options */}
-      {showOptions ? (
-        <div className="space-y-2 mb-6">
-          {options.map((option, index) => (
+      {/* If answer not shown yet */}
+      {!showAnswer && timer > 0 && (
+        <>
+          {/* Power Cards */}
+          <div className="flex gap-4 mb-6 justify-center">
             <button
-              key={index}
-              onClick={() => !isAnswered && setUserAnswer(option)}
-              disabled={isAnswered}
-              className={`w-full p-3 rounded-lg border-2 transition-all text-right ${
-                isAnswered && option === question.answer
-                  ? 'bg-success text-white'
-                  : isAnswered && option === userAnswer && option !== question.answer
-                  ? 'bg-error text-white'
-                  : userAnswer === option
-                  ? 'bg-property-blue text-white'
-                  : 'hover:bg-gray-100'
-              }`}
+              onClick={handleShowOptions}
+              disabled={team.powerCards.showOptions <= 0 || showOptions}
+              className={`
+                px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2
+                ${team.powerCards.showOptions > 0 && !showOptions
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg transform hover:scale-105'
+                  : 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-50'
+                }
+              `}
             >
-              {String.fromCharCode(65 + index)}. {option}
+              <span className="text-xl">🎯</span>
+              <span>إظهار خيارات ({team.powerCards.showOptions})</span>
             </button>
-          ))}
-        </div>
-      ) : (
-        <div className="mb-6">
-          <input
-            type="text"
-            value={userAnswer}
-            onChange={(e) => setUserAnswer(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
-            disabled={isAnswered}
-            placeholder="اكتب إجابتك هنا..."
-            className="w-full p-3 text-lg border-2 border-gray-300 rounded-lg focus:border-luxury-gold focus:outline-none disabled:opacity-50 text-right"
-            dir="rtl"
-          />
-        </div>
-      )}
-      
-      {/* Submit Button */}
-      {!isAnswered && (
-        <button
-          onClick={handleSubmit}
-          disabled={!userAnswer.trim()}
-          className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          تأكيد الإجابة
-        </button>
-      )}
-      
-      {/* Result Message */}
-      {isAnswered && (
-        <div className="text-center">
-          <div className={`text-xl font-montserrat font-bold ${
-            isCorrect ? 'text-success' : 'text-error'
-          }`}>
-            {isCorrect ? 'إجابة صحيحة! تم تأمين العقار!' : 'إجابة خاطئة! خسرت العقار!'}
+            
+            <button
+              onClick={handleShowHint}
+              disabled={team.powerCards.showHint <= 0 || showHint}
+              className={`
+                px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2
+                ${team.powerCards.showHint > 0 && !showHint
+                  ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white hover:from-yellow-600 hover:to-yellow-700 shadow-lg transform hover:scale-105'
+                  : 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-50'
+                }
+              `}
+            >
+              <span className="text-xl">💡</span>
+              <span>إظهار تلميح ({team.powerCards.showHint})</span>
+            </button>
           </div>
-          {!isCorrect && (
-            <div className="mt-2 text-gray-600">
-              الإجابة الصحيحة: {question.answer}
+          
+          {/* Options if power card used */}
+          {showOptions && (
+            <div className="space-y-3 mb-6">
+              <div className="text-lg font-medium text-gray-700 text-center mb-4">اختر الإجابة:</div>
+              <div className="grid grid-cols-2 gap-4">
+                {options.map((option, index) => (
+                  <button
+                    key={`${question.id}-option-${index}`}
+                    onClick={() => {
+                      setSelectedOption(option);
+                      // Auto-check answer when multiple choice option is selected
+                      setShowAnswer(true);
+                    }}
+                    className={`
+                      p-4 rounded-lg border-2 transition-all duration-200 text-right font-medium
+                      ${selectedOption === option
+                        ? 'bg-gradient-to-r from-property-blue to-blue-600 text-white border-property-blue shadow-lg transform scale-105'
+                        : 'bg-white border-gray-300 hover:border-property-blue hover:shadow-md'
+                      }
+                    `}
+                  >
+                    <span className="inline-block w-8 h-8 rounded-full bg-gray-200 text-gray-700 text-center leading-8 ml-2">
+                      {String.fromCharCode(1571 + index)}
+                    </span>
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Show Answer Button */}
+          <button
+            onClick={handleShowAnswer}
+            className="w-full py-4 bg-gradient-to-r from-accent to-red-600 text-white font-bold text-xl rounded-lg shadow-lg hover:from-red-600 hover:to-red-700 transform transition-all duration-200 hover:scale-105"
+          >
+            إظهار الإجابة
+          </button>
+        </>
+      )}
+      
+      {/* Show answer button when timer ends */}
+      {!showAnswer && timer === 0 && (
+        <div className="text-center">
+          <div className="text-2xl font-bold text-red-600 mb-4">انتهى الوقت!</div>
+          <button
+            onClick={handleShowAnswer}
+            className="px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-xl rounded-lg shadow-lg hover:from-red-600 hover:to-red-700 transform transition-all duration-200 hover:scale-105 animate-pulse"
+          >
+            عرض الإجابة
+          </button>
+        </div>
+      )}
+      
+      {/* If answer is shown */}
+      {showAnswer && (
+        <div className="space-y-6">
+          {/* Correct Answer Display */}
+          <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-400 shadow-lg">
+            <div className="text-lg font-medium text-gray-700 mb-2">الإجابة الصحيحة:</div>
+            <div className="text-3xl font-montserrat font-bold text-green-700">
+              {question.answer}
+            </div>
+          </div>
+          
+          {/* Player's Selected Option (if they used the power card) */}
+          {showOptions && selectedOption && (
+            <div className={`rounded-lg p-4 text-center ${selectedOption === question.answer ? 'bg-green-100 border-2 border-green-400' : 'bg-red-100 border-2 border-red-400'}`}>
+              <span className="text-gray-600">اختار الفريق: </span>
+              <span className="font-bold text-lg">{selectedOption}</span>
+              <span className="ml-2 text-2xl">
+                {selectedOption === question.answer ? '✓' : '✗'}
+              </span>
+            </div>
+          )}
+          
+          {/* Manual Decision Buttons - or Auto Result if Multiple Choice Used */}
+          {(!showOptions || !selectedOption) ? (
+            <div className="bg-white rounded-xl p-6 shadow-lg">
+              <div className="text-xl font-medium mb-4 text-center text-gray-800">
+                هل كانت الإجابة صحيحة؟
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <button
+                  onClick={() => handleAnswerResult(true)}
+                  className="px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 text-xl font-bold shadow-lg transform hover:scale-105 flex items-center justify-center gap-3"
+                >
+                  <span className="text-2xl">✓</span>
+                  <span>إجابة صحيحة</span>
+                </button>
+                <button
+                  onClick={() => handleAnswerResult(false)}
+                  className="px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 text-xl font-bold shadow-lg transform hover:scale-105 flex items-center justify-center gap-3"
+                >
+                  <span className="text-2xl">✗</span>
+                  <span>إجابة خاطئة</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              <button
+                onClick={() => handleAnswerResult(selectedOption === question.answer)}
+                className={`px-8 py-4 text-white rounded-lg transition-all duration-200 text-xl font-bold shadow-lg transform hover:scale-105 ${
+                  selectedOption === question.answer 
+                    ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
+                    : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
+                }`}
+              >
+                متابعة
+              </button>
             </div>
           )}
         </div>

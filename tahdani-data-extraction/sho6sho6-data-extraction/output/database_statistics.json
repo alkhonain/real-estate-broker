@@ -1,0 +1,14 @@
+{
+  "total_questions": 115,
+  "categories": 10,
+  "difficulty_breakdown": {
+    "سهل": 37,
+    "متوسط": 59,
+    "صعب": 19
+  },
+  "points_breakdown": {
+    "5": 37,
+    "10": 59,
+    "15": 19
+  }
+}

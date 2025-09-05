@@ -1,0 +1,94 @@
+{
+  "category": {
+    "id": "sports",
+    "name": "رياضة",
+    "name_en": "Sports",
+    "icon": "⚽"
+  },
+  "questions": [
+    {
+      "id": "q_sport_1",
+      "category_id": "sports",
+      "question": "كم مرة فازت البرازيل بكأس العالم؟",
+      "answer": "5 مرات",
+      "options": [
+        "3 مرات",
+        "4 مرات",
+        "5 مرات",
+        "6 مرات"
+      ],
+      "difficulty": "متوسط",
+      "points": 10
+    },
+    {
+      "id": "q_sports_21",
+      "category_id": "sports",
+      "question": "في أي عام أقيمت أول بطولة لكأس العالم؟",
+      "answer": "1930",
+      "options": [
+        "1928",
+        "1930",
+        "1932",
+        "1934"
+      ],
+      "difficulty": "متوسط",
+      "points": 10
+    },
+    {
+      "id": "q_sports_22",
+      "category_id": "sports",
+      "question": "كم عدد اللاعبين في فريق كرة السلة؟",
+      "answer": "5 لاعبين",
+      "options": [
+        "4 لاعبين",
+        "5 لاعبين",
+        "6 لاعبين",
+        "7 لاعبين"
+      ],
+      "difficulty": "سهل",
+      "points": 5
+    },
+    {
+      "id": "q_sports_23",
+      "category_id": "sports",
+      "question": "من هو اللاعب الملقب بـ 'الظاهرة'؟",
+      "answer": "رونالدو البرازيلي",
+      "options": [
+        "بيليه",
+        "مارادونا",
+        "رونالدو البرازيلي",
+        "زيدان"
+      ],
+      "difficulty": "متوسط",
+      "points": 10
+    },
+    {
+      "id": "q_sports_24",
+      "category_id": "sports",
+      "question": "كم مدة الشوط الواحد في كرة القدم؟",
+      "answer": "45 دقيقة",
+      "options": [
+        "40 دقيقة",
+        "45 دقيقة",
+        "50 دقيقة",
+        "60 دقيقة"
+      ],
+      "difficulty": "سهل",
+      "points": 5
+    },
+    {
+      "id": "q_sports_25",
+      "category_id": "sports",
+      "question": "أين أقيمت دورة الألعاب الأولمبية عام 2016؟",
+      "answer": "ريو دي جانيرو",
+      "options": [
+        "لندن",
+        "بكين",
+        "ريو دي جانيرو",
+        "طوكيو"
+      ],
+      "difficulty": "متوسط",
+      "points": 10
+    }
+  ]
+}

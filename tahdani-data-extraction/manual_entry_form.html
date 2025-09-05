@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tahdani Data Entry</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .output {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tahdani Data Entry Form</h1>
+        
+        <h2>إضافة فئة جديدة</h2>
+        <div class="form-group">
+            <label>اسم الفئة:</label>
+            <input type="text" id="categoryName" placeholder="مثال: تاريخ">
+        </div>
+        <div class="form-group">
+            <label>وصف الفئة:</label>
+            <input type="text" id="categoryDesc" placeholder="مثال: أسئلة عن التاريخ">
+        </div>
+        <button onclick="addCategory()">إضافة فئة</button>
+        
+        <h2>إضافة سؤال جديد</h2>
+        <div class="form-group">
+            <label>الفئة:</label>
+            <select id="questionCategory">
+                <option value="">اختر فئة</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>السؤال:</label>
+            <textarea id="questionText" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+            <label>الإجابة الصحيحة:</label>
+            <input type="text" id="correctAnswer">
+        </div>
+        <div class="form-group">
+            <label>الخيارات (مفصولة بفواصل):</label>
+            <input type="text" id="options" placeholder="خيار1, خيار2, خيار3, خيار4">
+        </div>
+        <button onclick="addQuestion()">إضافة سؤال</button>
+        
+        <h2>البيانات المُدخلة</h2>
+        <button onclick="exportData()">تصدير كـ JSON</button>
+        <div id="output" class="output"></div>
+    </div>
+    
+    <script>
+        let database = {
+            categories: [],
+            questions: []
+        };
+        
+        function addCategory() {
+            const name = document.getElementById('categoryName').value;
+            const desc = document.getElementById('categoryDesc').value;
+            
+            if (name) {
+                const category = {
+                    id: 'cat_' + (database.categories.length + 1),
+                    name: name,
+                    description: desc
+                };
+                database.categories.push(category);
+                updateCategorySelect();
+                updateOutput();
+                
+                // Clear inputs
+                document.getElementById('categoryName').value = '';
+                document.getElementById('categoryDesc').value = '';
+            }
+        }
+        
+        function addQuestion() {
+            const category = document.getElementById('questionCategory').value;
+            const question = document.getElementById('questionText').value;
+            const answer = document.getElementById('correctAnswer').value;
+            const options = document.getElementById('options').value.split(',').map(o => o.trim());
+            
+            if (category && question && answer) {
+                const q = {
+                    id: 'q_' + (database.questions.length + 1),
+                    category_id: category,
+                    question: question,
+                    answer: answer,
+                    options: options,
+                    difficulty: 'medium',
+                    points: 10
+                };
+                database.questions.push(q);
+                updateOutput();
+                
+                // Clear inputs
+                document.getElementById('questionText').value = '';
+                document.getElementById('correctAnswer').value = '';
+                document.getElementById('options').value = '';
+            }
+        }
+        
+        function updateCategorySelect() {
+            const select = document.getElementById('questionCategory');
+            select.innerHTML = '<option value="">اختر فئة</option>';
+            database.categories.forEach(cat => {
+                select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+            });
+        }
+        
+        function updateOutput() {
+            const output = document.getElementById('output');
+            output.textContent = JSON.stringify(database, null, 2);
+        }
+        
+        function exportData() {
+            const dataStr = JSON.stringify(database, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = 'tahdani_data.json';
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+    </script>
+</body>
+</html>

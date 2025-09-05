@@ -1,0 +1,44 @@
+{
+  "database_name": "Sho6sho6 Ultimate Question Database",
+  "version": "2.0",
+  "total_questions": 269,
+  "total_categories": 10,
+  "extraction_date": "2025-09-05T15:30:22.091299",
+  "categories_summary": {
+    "history": 38,
+    "geography": 34,
+    "science": 35,
+    "sports": 22,
+    "literature": 21,
+    "religion": 27,
+    "general": 28,
+    "entertainment": 19,
+    "technology": 20,
+    "arabic_culture": 25
+  },
+  "difficulty_breakdown": {
+    "سهل": {
+      "count": 77,
+      "percentage": "28.6%"
+    },
+    "متوسط": {
+      "count": 121,
+      "percentage": "45.0%"
+    },
+    "صعب": {
+      "count": 71,
+      "percentage": "26.4%"
+    }
+  },
+  "features": [
+    "Arabic quiz questions",
+    "Multiple choice format",
+    "3 difficulty levels",
+    "Point-based scoring",
+    "10 main categories",
+    "Gulf-specific content",
+    "Islamic content",
+    "Modern topics (2020s)",
+    "Educational content"
+  ]
+}
