@@ -1,18 +1,41 @@
 import React, { useState } from 'react';
 import { useGame } from '../contexts/GameContext.jsx';
-import MapView from './MapView.jsx';
+import RiyadhMapGame from './RiyadhMapGame.jsx';
 import TeamPanel from './TeamPanel.jsx';
 import AuctionPanel from './AuctionPanel.jsx';
-import QuestionPanel from './QuestionPanel.jsx';
+import QuestionModal from './QuestionModal.jsx';
+import BlockDetailsAndCategory from './BlockDetailsAndCategory.jsx';
+import { formatNumber } from '../utils/formatters.js';
 
 function GameBoard() {
   const { state, dispatch } = useGame();
+  const [showBlockDetails, setShowBlockDetails] = useState(false);
+  
   
   const handleStartAuction = () => {
     dispatch({ type: 'START_AUCTION' });
   };
   
+  const handleAuctionEnd = () => {
+    setShowBlockDetails(true);
+  };
+  
+  const handleCategorySelected = () => {
+    setShowBlockDetails(false);
+  };
+  
   const handleQuestionAnswer = (isCorrect, questionId) => {
+    console.log('GameBoard - handleQuestionAnswer called:', {
+      isCorrect,
+      questionId,
+      currentBidder: state.currentAuction?.currentBidder
+    });
+    
+    if (!state.currentAuction?.currentBidder) {
+      console.error('GameBoard - No current bidder!');
+      return;
+    }
+    
     dispatch({
       type: 'ANSWER_QUESTION',
       payload: {
@@ -23,6 +46,12 @@ function GameBoard() {
     });
   };
   
+  if (!state || !state.teams || !state.blocks) {
+    return <div className="min-h-screen flex items-center justify-center">
+      <div className="text-2xl">Loading...</div>
+    </div>;
+  }
+
   return (
     <div className="min-h-screen p-4 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
       {/* Animated background elements */}
@@ -33,31 +62,31 @@ function GameBoard() {
       </div>
 
       {/* Header */}
-      <div className="relative z-10 bg-gradient-to-r from-white/90 via-blue-50/90 to-indigo-50/90 backdrop-blur-xl rounded-2xl shadow-2xl p-6 mb-6 border border-white/50">
+      <div className="relative z-10 bg-gradient-to-r from-white/90 via-blue-50/90 to-indigo-50/90 backdrop-blur-xl rounded-2xl shadow-2xl p-3 mb-2 border border-white/50">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg animate-pulse">
-              <span className="text-3xl text-white">🏢</span>
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg animate-pulse">
+              <span className="text-2xl text-white">🏢</span>
             </div>
             <div>
-              <h1 className="text-4xl font-montserrat font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">
+              <h1 className="text-2xl font-montserrat font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">
                 سمسار العقارات
               </h1>
-              <p className="text-lg font-medium text-gray-600 mt-1">
+              <p className="text-sm font-medium text-gray-600">
                 {state.selectedMap.name}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full shadow-lg">
-              <span className="text-white font-semibold flex items-center gap-2">
-                <span className="text-xl">🏆</span>
-                <span>العقارات المتبقية: {state.blocks.filter(b => !b.owner && !state.blockedBlocks.includes(b.id)).length}</span>
+            <div className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full shadow-lg">
+              <span className="text-white text-sm font-semibold flex items-center gap-1">
+                <span className="text-base">🏆</span>
+                <span>العقارات المتبقية: {formatNumber(state.blocks.filter(b => !b.owner && !state.blockedBlocks.includes(b.id)).length)}</span>
               </span>
             </div>
             <button
               onClick={() => dispatch({ type: 'END_GAME' })}
-              className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-montserrat font-medium rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+              className="px-3 py-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-sm font-montserrat font-medium rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
             >
               <span className="flex items-center gap-2">
                 <span>🏁</span>
@@ -68,9 +97,9 @@ function GameBoard() {
         </div>
       </div>
       
-      <div className="relative z-10 grid grid-cols-12 gap-6">
+      <div className="relative z-10 grid grid-cols-12 gap-4">
         {/* Team Panels */}
-        <div className="col-span-3 space-y-6">
+        <div className="col-span-3 space-y-4">
           {state.teams.slice(0, Math.ceil(state.teams.length / 2)).map(team => (
             <div key={team.id} className="transform transition-all duration-300 hover:scale-[1.01]">
               <TeamPanel team={team} />
@@ -79,26 +108,19 @@ function GameBoard() {
         </div>
         
         {/* Map View */}
-        <div className="col-span-6 space-y-6">
-          <div className="transform transition-all duration-300 hover:scale-[1.01]">
-            <MapView />
+        <div className="col-span-6 space-y-4">
+          <div className="transform transition-all duration-300">
+            <RiyadhMapGame />
           </div>
           
-          {/* Auction/Question Panel */}
+          {/* Auction Panel */}
           <div className="transform transition-all duration-300">
-            {state.currentQuestion ? (
-              <div className="animate-fade-in">
-                <QuestionPanel
-                  question={state.currentQuestion}
-                  onAnswer={handleQuestionAnswer}
-                  team={state.teams.find(t => t.id === state.currentAuction?.currentBidder)}
-                />
-              </div>
-            ) : state.currentAuction ? (
+            {state.currentAuction && !state.currentQuestion ? (
               <div className="animate-fade-in">
                 <AuctionPanel
                   auction={state.currentAuction}
                   teams={state.teams}
+                  onAuctionEnd={handleAuctionEnd}
                 />
               </div>
             ) : (
@@ -136,7 +158,7 @@ function GameBoard() {
         </div>
         
         {/* Remaining Team Panels */}
-        <div className="col-span-3 space-y-6">
+        <div className="col-span-3 space-y-4">
           {state.teams.slice(Math.ceil(state.teams.length / 2)).map(team => (
             <div key={team.id} className="transform transition-all duration-300 hover:scale-[1.01]">
               <TeamPanel team={team} />
@@ -144,6 +166,16 @@ function GameBoard() {
           ))}
         </div>
       </div>
+      
+      {/* Block Details Modal */}
+      {showBlockDetails && state.currentAuction && !state.currentQuestion && (
+        <BlockDetailsAndCategory onContinue={handleCategorySelected} />
+      )}
+      
+      {/* Question Modal */}
+      {state.currentQuestion && (
+        <QuestionModal onAnswer={handleQuestionAnswer} />
+      )}
     </div>
   );
 }

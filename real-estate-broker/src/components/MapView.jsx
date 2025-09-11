@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGame } from '../contexts/GameContext.jsx';
+import { formatNumber } from '../utils/formatters.js';
 
 function MapView() {
   const { state } = useGame();
@@ -20,12 +21,6 @@ function MapView() {
     return state.currentAuction?.block.id === blockId;
   };
   
-  const formatMoney = (amount) => {
-    return new Intl.NumberFormat('ar-SA', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
   
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-2xl shadow-2xl p-6 border border-amber-200/50">
@@ -89,12 +84,12 @@ function MapView() {
                     <div className="space-y-2 bg-white/50 rounded-lg p-3">
                       <div className="flex justify-between items-center text-base">
                         <span className="text-gray-600 font-medium">القطع:</span>
-                        <span className="font-bold text-gray-800 text-lg">{block.pieces}</span>
+                        <span className="font-bold text-gray-800 text-lg">{formatNumber(block.pieces)}</span>
                       </div>
                       
                       <div className="flex justify-between items-center text-base mt-2">
                         <span className="text-gray-600 font-medium">النقاط:</span>
-                        <span className="font-bold text-luxury-gold text-xl">{blockData?.points}</span>
+                        <span className="font-bold text-luxury-gold text-xl">{formatNumber(blockData?.points || 0)}</span>
                       </div>
                     </div>
                     

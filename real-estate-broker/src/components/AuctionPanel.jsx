@@ -1,21 +1,12 @@
 import React, { useState } from 'react';
 import { useGame } from '../contexts/GameContext.jsx';
-import CategorySelector from './CategorySelector.jsx';
+import { formatMoney, formatNumber } from '../utils/formatters.js';
 
-function AuctionPanel({ auction, teams }) {
+function AuctionPanel({ auction, teams, onAuctionEnd }) {
   const { dispatch, state } = useGame();
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [bidAmount, setBidAmount] = useState(auction.currentBid + 50000);
-  const [showCategorySelection, setShowCategorySelection] = useState(false);
   
-  const formatMoney = (amount) => {
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
   
   const handlePlaceBid = () => {
     if (!selectedTeam) return;
@@ -35,23 +26,16 @@ function AuctionPanel({ auction, teams }) {
   
   const handleEndAuction = () => {
     if (!auction.currentBidder) return;
-    setShowCategorySelection(true);
-  };
-  
-  const handleCategorySelected = () => {
-    setShowCategorySelection(false);
+    onAuctionEnd();
   };
   
   const canBid = (team) => {
     return team.money >= bidAmount;
   };
   
-  if (showCategorySelection) {
-    return <CategorySelector onCategorySelected={handleCategorySelected} />;
-  }
   
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-white via-blue-50 to-indigo-100 rounded-2xl shadow-2xl p-8 backdrop-blur-sm border border-blue-200/50">
+    <div className="relative overflow-hidden bg-gradient-to-br from-white via-blue-50 to-indigo-100 rounded-lg shadow-lg p-4 backdrop-blur-sm border border-blue-200/50">
       {/* Animated background pattern */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-100/30 via-transparent to-indigo-100/30 pointer-events-none"></div>
       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-transparent rounded-full blur-xl animate-pulse"></div>
@@ -60,12 +44,12 @@ function AuctionPanel({ auction, teams }) {
       <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-purple-300/30 rounded-full blur-2xl animate-bounce delay-500"></div>
       
       <div className="relative z-10">
-        <h3 className="text-3xl font-montserrat font-bold mb-6 text-center bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">
+        <h3 className="text-xl font-montserrat font-bold mb-3 text-center bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">
           🏛️ المزاد العقاري
         </h3>
         
         {/* Property Details */}
-        <div className="bg-gradient-to-r from-white/80 to-blue-50/80 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl border border-white/50 transform transition-all duration-300 hover:scale-[1.02]">
+        <div className="bg-gradient-to-r from-white/80 to-blue-50/80 backdrop-blur-sm rounded-lg p-3 mb-3 shadow-lg border border-white/50 transform transition-all duration-300 hover:scale-[1.01]">
           <div className="flex items-center gap-3 mb-3">
             <span className="text-2xl">🏢</span>
             <div className="text-xl font-montserrat font-bold text-gray-800">
@@ -81,19 +65,19 @@ function AuctionPanel({ auction, teams }) {
           <div className="flex justify-between items-center p-3 bg-white/70 rounded-xl backdrop-blur-sm">
             <div className="flex items-center gap-2">
               <span className="text-lg">🧱</span>
-              <span className="font-medium">القطع: {auction.block.pieces}</span>
+              <span className="font-medium">القطع: {formatNumber(auction.block.pieces)}</span>
             </div>
             <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full shadow-lg">
               <span className="text-lg">⭐</span>
               <span className="font-bold text-white">
-                {auction.block.points} نقطة
+                {formatNumber(auction.block.points)} نقطة
               </span>
             </div>
           </div>
         </div>
         
         {/* Current Bid */}
-        <div className="text-center mb-8 p-6 bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur-sm rounded-2xl shadow-lg border border-green-200/50 transform transition-all duration-300">
+        <div className="text-center mb-4 p-3 bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur-sm rounded-lg shadow-lg border border-green-200/50 transform transition-all duration-300">
           <div className="flex items-center justify-center gap-2 mb-3">
             <span className="text-xl">💸</span>
             <div className="text-sm font-medium text-green-700">المزايدة الحالية</div>
@@ -110,7 +94,7 @@ function AuctionPanel({ auction, teams }) {
         </div>
         
         {/* Bidding Interface */}
-        <div className="space-y-6">
+        <div className="space-y-3">
           {/* Team Selection */}
           <div className="p-6 bg-gradient-to-r from-white/70 to-gray-50/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50">
             <div className="flex items-center gap-2 mb-4">

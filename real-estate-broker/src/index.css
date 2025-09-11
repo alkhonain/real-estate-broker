@@ -65,4 +65,66 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #6b7280;
   }
+  
+  /* Leaflet custom styles */
+  .leaflet-container {
+    font-family: 'Tajawal', sans-serif;
+    direction: rtl;
+  }
+  
+  .leaflet-popup-content-wrapper {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+  }
+  
+  .leaflet-popup-content {
+    margin: 16px;
+    font-size: 14px;
+  }
+  
+  .leaflet-popup-tip {
+    background: rgba(255, 255, 255, 0.95);
+  }
+  
+  /* Smooth polygon transitions */
+  .leaflet-interactive {
+    transition: fill-opacity 0.3s ease, stroke-width 0.2s ease;
+  }
+  
+  /* Map control animations */
+  .leaflet-control-zoom a {
+    transition: all 0.2s ease;
+  }
+  
+  /* Animation for float effect */
+  @keyframes float-delayed {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+  }
+  
+  .animate-float-delayed {
+    animation: float-delayed 8s ease-in-out infinite;
+    animation-delay: 2s;
+  }
+  
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.5); }
+    50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.8); }
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { transform: translateX(-100%) skewX(-12deg); }
+    100% { transform: translateX(200%) skewX(-12deg); }
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 1s ease-out;
+  }
 }

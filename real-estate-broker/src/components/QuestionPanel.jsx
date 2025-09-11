@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../contexts/GameContext.jsx';
 import { QUESTION_CATEGORIES } from '../data/arabicQuestions.js';
+import { formatNumber } from '../utils/formatters.js';
 
 function QuestionPanel({ question, onAnswer, team }) {
   const { dispatch } = useGame();
   const [showAnswer, setShowAnswer] = useState(false);
-  const [showHint, setShowHint] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [timer, setTimer] = useState(60);
   const [selectedOption, setSelectedOption] = useState('');
@@ -99,26 +99,11 @@ function QuestionPanel({ question, onAnswer, team }) {
     setTimer(prev => prev + 20);
   };
   
-  const handleShowHint = () => {
-    if (!team.powerCards.showHint || team.powerCards.showHint <= 0) return;
-    
-    dispatch({
-      type: 'USE_POWER_CARD',
-      payload: {
-        teamId: team.id,
-        cardType: 'showHint'
-      }
-    });
-    
-    setShowHint(true);
-    // Add 20 seconds when showing hint
-    setTimer(prev => prev + 20);
-  };
   
   const categoryInfo = QUESTION_CATEGORIES[question.categoryId];
   
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-white via-purple-50 to-indigo-100 rounded-2xl shadow-2xl p-8 border border-purple-200/50">
+    <div className="relative overflow-hidden bg-gradient-to-br from-white via-purple-50 to-indigo-100 rounded-3xl shadow-2xl p-8 border border-purple-200/50">
       {/* Animated background elements */}
       <div className="absolute inset-0 bg-gradient-to-br from-purple-100/20 via-transparent to-indigo-100/20 pointer-events-none"></div>
       <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-purple-300/20 to-transparent rounded-full blur-xl animate-pulse"></div>
@@ -138,7 +123,7 @@ function QuestionPanel({ question, onAnswer, team }) {
         <div className={`text-5xl font-roboto-mono font-bold ${
           timer <= 10 ? 'text-red-500 animate-pulse' : 'text-gray-700'
         }`}>
-          {timer}
+          {formatNumber(timer)}
         </div>
       </div>
       
@@ -147,12 +132,6 @@ function QuestionPanel({ question, onAnswer, team }) {
         <div className="text-2xl font-montserrat font-medium text-gray-900">
           {question.question}
         </div>
-        
-        {showHint && (
-          <div className="mt-4 bg-white bg-opacity-90 rounded-lg p-3 text-gray-700 italic">
-            💡 تلميح: {question.hint}
-          </div>
-        )}
       </div>
       
       {/* If answer not shown yet */}
@@ -172,22 +151,7 @@ function QuestionPanel({ question, onAnswer, team }) {
               `}
             >
               <span className="text-xl">🎯</span>
-              <span>إظهار خيارات ({team.powerCards.showOptions})</span>
-            </button>
-            
-            <button
-              onClick={handleShowHint}
-              disabled={team.powerCards.showHint <= 0 || showHint}
-              className={`
-                px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2
-                ${team.powerCards.showHint > 0 && !showHint
-                  ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white hover:from-yellow-600 hover:to-yellow-700 shadow-lg transform hover:scale-105'
-                  : 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-50'
-                }
-              `}
-            >
-              <span className="text-xl">💡</span>
-              <span>إظهار تلميح ({team.powerCards.showHint})</span>
+              <span>إظهار خيارات ({formatNumber(team.powerCards.showOptions)})</span>
             </button>
           </div>
           

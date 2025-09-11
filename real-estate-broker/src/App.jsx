@@ -3,6 +3,7 @@ import { GameProvider, useGame } from './contexts/GameContext.jsx';
 import GameSetup from './components/GameSetup.jsx';
 import GameBoard from './components/GameBoard.jsx';
 import GameEnd from './components/GameEnd.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 
 function GameContent() {
   const { state } = useGame();
@@ -21,11 +22,13 @@ function GameContent() {
 
 function App() {
   return (
-    <GameProvider>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <GameContent />
-      </div>
-    </GameProvider>
+    <ErrorBoundary>
+      <GameProvider>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+          <GameContent />
+        </div>
+      </GameProvider>
+    </ErrorBoundary>
   );
 }
 

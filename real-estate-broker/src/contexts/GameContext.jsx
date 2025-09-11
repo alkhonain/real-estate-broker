@@ -18,8 +18,7 @@ const INITIAL_STATE = {
   usedQuestions: JSON.parse(localStorage.getItem('usedQuestions') || '[]'),
   difficulty: 'medium',
   powerCards: {
-    showOptions: 3, // Show multiple choice options (3 times)
-    showHint: 2 // Show hint (2 times)
+    showOptions: 3 // Show multiple choice options (3 times)
   },
   blockedBlocks: [] // Blocks that were not answered correctly
 };
@@ -32,7 +31,8 @@ const TEAM_COLORS = [
 ];
 
 const gameReducer = (state, action) => {
-  switch (action.type) {
+  try {
+    switch (action.type) {
     case 'SETUP_GAME':
       const { mapId, teamCount, difficulty, selectedCategories, customTeams } = action.payload;
       const selectedMap = MAPS[mapId];
@@ -63,12 +63,15 @@ const gameReducer = (state, action) => {
       const blocks = selectedMap.districts.flatMap(district =>
         district.blocks.map(block => ({
           ...block,
-          districtId: district.id,
-          districtName: district.name,
+          districtId: block.districtId || district.id,
+          districtName: block.name || district.name,
+          areaId: block.areaId,
+          areaName: block.areaName,
           owner: null,
-          points: calculateBlockPoints(block.pieces)
+          points: block.points || calculateBlockPoints(block.pieces)
         }))
       );
+      
       
       const questions = getQuestionsByCategories(selectedCategories);
       
@@ -186,7 +189,21 @@ const gameReducer = (state, action) => {
       };
       
     case 'ANSWER_QUESTION':
+      console.log('ANSWER_QUESTION - Starting with state:', {
+        hasBlocks: !!state.blocks,
+        blocksLength: state.blocks?.length,
+        hasTeams: !!state.teams,
+        teamsLength: state.teams?.length,
+        isCorrect: action.payload.isCorrect
+      });
+      
       const { isCorrect, teamId: answeringTeamId, questionId } = action.payload;
+      
+      // Ensure we have valid state before proceeding
+      if (!state || !state.blocks || !state.teams) {
+        console.error('ANSWER_QUESTION - Invalid state:', state);
+        return state;
+      }
       
       // Save used question to localStorage
       const newUsedQuestions = [...state.usedQuestions, questionId];
@@ -196,94 +213,115 @@ const gameReducer = (state, action) => {
       const biddingTeam = state.teams.find(t => t.id === answeringTeamId);
       const bidAmount = state.currentAuction?.currentBid || 0;
       
-      let updatedBlocks = state.blocks;
-      let updatedTeams = state.teams;
+      // Create a completely new state object to avoid mutations
+      let newState = {
+        ...state,
+        blocks: [...state.blocks], // Deep copy blocks array
+        teams: [...state.teams], // Deep copy teams array
+        blockedBlocks: [...state.blockedBlocks], // Deep copy blocked blocks
+        usedQuestions: newUsedQuestions,
+        currentAuction: null,
+        currentQuestion: null,
+        currentTeamIndex: (state.currentTeamIndex + 1) % state.teams.length
+      };
       
       if (isCorrect && state.currentAuction) {
-        // Update block ownership only if answer is correct
-        updatedBlocks = state.blocks.map(block =>
-          block.id === state.currentAuction.block.id
-            ? { ...block, owner: answeringTeamId }
-            : block
-        );
+        console.log('ANSWER_QUESTION - Processing correct answer');
         
-        // Update teams - deduct money and add points if correct
-        updatedTeams = state.teams.map(team => {
-          if (team.id === answeringTeamId) {
-            const newOwnedBlocks = [...team.ownedBlocks, state.currentAuction.block.id];
-            
-            return {
-              ...team,
-              money: team.money - bidAmount, // Deduct money
-              ownedBlocks: newOwnedBlocks
-            };
+        // Update block ownership
+        newState.blocks = newState.blocks.map(block => {
+          if (block.id === state.currentAuction.block.id) {
+            return { ...block, owner: answeringTeamId };
           }
-          return team;
+          return { ...block }; // Return a copy of each block
         });
         
-        // Recalculate all teams' scores with new scoring system
-        updatedTeams = updatedTeams.map(team => {
-          let totalScore = 0;
+        // Update teams - deduct money and add the block
+        newState.teams = newState.teams.map(team => {
+          const teamCopy = { ...team };
           
-          // Calculate points for each district
-          state.selectedMap.districts.forEach(district => {
-            const teamBlocksInDistrict = updatedBlocks.filter(
-              b => b.districtId === district.id && b.owner === team.id
-            );
-            
-            if (teamBlocksInDistrict.length > 0) {
-              const districtPoints = teamBlocksInDistrict.reduce((sum, block) => sum + block.points, 0);
-              
-              // Double points if team owns entire district (all blocks)
-              const ownsEntireDistrict = teamBlocksInDistrict.length === district.blocks.length;
-              totalScore += ownsEntireDistrict ? districtPoints * 2 : districtPoints;
+          if (team.id === answeringTeamId) {
+            teamCopy.money = team.money - bidAmount;
+            teamCopy.ownedBlocks = [...team.ownedBlocks, state.currentAuction.block.id];
+          }
+          
+          // Recalculate score for all teams
+          let totalScore = 0;
+          const teamOwnedBlocks = newState.blocks.filter(b => b.owner === teamCopy.id);
+          totalScore = teamOwnedBlocks.reduce((sum, block) => sum + (block.points || 0), 0);
+          
+          // Check for complete area bonuses
+          const areas = {};
+          teamOwnedBlocks.forEach(block => {
+            if (block.areaId) {
+              if (!areas[block.areaId]) {
+                areas[block.areaId] = {
+                  owned: 0,
+                  total: 0,
+                  points: 0
+                };
+              }
+              areas[block.areaId].owned++;
+              areas[block.areaId].points += (block.points || 0);
             }
           });
           
-          // Check if team has at least one property in each district
-          const districtsWithProperty = state.selectedMap.districts.filter(district =>
-            updatedBlocks.some(b => b.districtId === district.id && b.owner === team.id)
-          ).length;
+          // Count total districts in each area
+          newState.blocks.forEach(block => {
+            if (block.areaId && areas[block.areaId]) {
+              areas[block.areaId].total++;
+            }
+          });
           
-          const hasPropertyInAllDistricts = districtsWithProperty === state.selectedMap.districts.length;
+          // Apply 2x bonus for owning all districts in an area
+          Object.values(areas).forEach(area => {
+            if (area.owned === area.total && area.total > 0) {
+              totalScore += area.points; // Add the same points again to double them
+            }
+          });
           
-          // Apply 10% bonus if team has property in all districts
-          if (hasPropertyInAllDistricts) {
+          // Check if team has at least one property in each area
+          const allAreas = new Set(newState.blocks.filter(b => b.areaId).map(b => b.areaId));
+          const areasWithProperty = Object.keys(areas).length;
+          
+          // Apply 10% bonus if team has property in all areas
+          if (areasWithProperty === allAreas.size && allAreas.size > 0) {
             totalScore = Math.floor(totalScore * 1.1);
           }
           
-          return {
-            ...team,
-            score: totalScore
-          };
+          teamCopy.score = totalScore;
+          return teamCopy;
         });
       } else {
-        // If answer is incorrect, only deduct money, no property or points
-        updatedTeams = state.teams.map(team => {
+        console.log('ANSWER_QUESTION - Processing incorrect answer');
+        
+        // If answer is incorrect, only deduct money
+        newState.teams = newState.teams.map(team => {
           if (team.id === answeringTeamId) {
             return {
               ...team,
-              money: team.money - bidAmount // Deduct money even for wrong answer
+              money: team.money - bidAmount
             };
           }
-          return team;
+          return { ...team };
         });
+        
+        // Add the block to blockedBlocks if answer was wrong
+        if (state.currentAuction?.block?.id) {
+          newState.blockedBlocks = [...newState.blockedBlocks, state.currentAuction.block.id];
+        }
       }
       
-      // Add the block to blockedBlocks if answer was wrong
-      const newBlockedBlocks = !isCorrect && state.currentAuction?.block?.id 
-        ? [...state.blockedBlocks, state.currentAuction.block.id]
-        : state.blockedBlocks;
+      console.log('ANSWER_QUESTION - Final newState:', {
+        hasBlocks: !!newState.blocks,
+        blocksLength: newState.blocks?.length,
+        hasTeams: !!newState.teams,
+        teamsLength: newState.teams?.length,
+        firstBlock: newState.blocks?.[0],
+        firstTeam: newState.teams?.[0]
+      });
       
-      return {
-        ...state,
-        teams: updatedTeams,
-        blocks: updatedBlocks,
-        currentAuction: null,
-        currentQuestion: null,
-        usedQuestions: newUsedQuestions,
-        blockedBlocks: newBlockedBlocks
-      };
+      return newState;
       
     case 'USE_POWER_CARD':
       const { teamId: cardTeamId, cardType } = action.payload;
@@ -319,16 +357,57 @@ const gameReducer = (state, action) => {
       
     default:
       return state;
+    }
+  } catch (error) {
+    console.error('Error in gameReducer:', action.type, error);
+    return state; // Return current state on error
   }
 };
 
 export const GameProvider = ({ children }) => {
   const [state, dispatch] = useReducer(gameReducer, INITIAL_STATE);
   
+  // Log state changes
+  useEffect(() => {
+    console.log('GameProvider - State updated:', {
+      hasState: !!state,
+      hasBlocks: !!state?.blocks,
+      blocksLength: state?.blocks?.length,
+      hasTeams: !!state?.teams,
+      teamsLength: state?.teams?.length,
+      gamePhase: state?.gamePhase
+    });
+  }, [state]);
+  
+  // Wrap dispatch to log actions
+  const wrappedDispatch = (action) => {
+    console.log('GameProvider - Dispatching action:', action.type);
+    return dispatch(action);
+  };
+  
+  // Ensure state always has required properties
+  const safeState = state ? {
+    ...state,
+    blocks: Array.isArray(state.blocks) ? state.blocks : [],
+    teams: Array.isArray(state.teams) ? state.teams : [],
+    blockedBlocks: Array.isArray(state.blockedBlocks) ? state.blockedBlocks : [],
+    gamePhase: state.gamePhase || 'setup',
+    selectedMap: state.selectedMap || null,
+    currentAuction: state.currentAuction || null,
+    currentQuestion: state.currentQuestion || null,
+    currentTeamIndex: state.currentTeamIndex || 0,
+    selectedCategories: state.selectedCategories || [],
+    availableCategories: state.availableCategories || [],
+    usedCategoriesInRound: state.usedCategoriesInRound || [],
+    questions: state.questions || [],
+    usedQuestions: state.usedQuestions || [],
+    difficulty: state.difficulty || 'medium',
+    powerCards: state.powerCards || INITIAL_STATE.powerCards
+  } : INITIAL_STATE;
   
   const value = {
-    state,
-    dispatch,
+    state: safeState,
+    dispatch: wrappedDispatch,
     QUESTION_CATEGORIES
   };
   
@@ -340,5 +419,15 @@ export const useGame = () => {
   if (!context) {
     throw new Error('useGame must be used within a GameProvider');
   }
-  return context;
+  
+  // Ensure we always return a valid state
+  return {
+    ...context,
+    state: context.state || {
+      blocks: [],
+      teams: [],
+      gamePhase: 'setup',
+      blockedBlocks: []
+    }
+  };
 };

@@ -1,70 +1,77 @@
+import { GAME_AREAS, getAreaBoundaries, getDistrictBoundary } from '../utils/riyadhDistrictsProcessor.js';
+
+// Points distribution for each district based on difficulty
+const DISTRICT_POINTS = {
+  // منطقة ١ - High difficulty districts
+  10100003145: { pieces: 25, points: 2500, name: 'حي الملقا' }, // حي الملقا
+  10100003147: { pieces: 24, points: 2400, name: 'حي الياسمين' }, // حي الياسمين
+  10100003146: { pieces: 23, points: 2300, name: 'حي النزهة' }, // حي النزهة
+  
+  // منطقة ٢ - High difficulty districts
+  10100003089: { pieces: 20, points: 2000, name: 'حي الروابي' }, // حي الروابي
+  10100003090: { pieces: 19, points: 1900, name: 'حي الريان' }, // حي الريان
+  10100003047: { pieces: 18, points: 1800, name: 'حي الربوة' }, // حي الربوة
+  
+  // منطقة ٣ - Medium difficulty districts
+  10100003140: { pieces: 15, points: 1500, name: 'حي المونسية' }, // حي المونسية
+  10100003101: { pieces: 14, points: 1400, name: 'حي قرطبة' }, // حي قرطبة
+  10100003139: { pieces: 13, points: 1300, name: 'حي اليرموك' }, // حي اليرموك
+  
+  // منطقة ٤ - Medium difficulty districts
+  10100003142: { pieces: 12, points: 1200, name: 'عرقة' }, // عرقة
+  10100003014: { pieces: 11, points: 1100, name: 'حي لبن' }, // حي لبن
+  10100003099: { pieces: 10, points: 1000, name: 'حي السفارات' }, // حي السفارات
+  
+  // منطقة ٥ - Medium difficulty districts
+  10100003108: { pieces: 9, points: 900, name: 'حي النخيل' }, // حي النخيل
+  10100003110: { pieces: 8, points: 800, name: 'حي المروج' }, // حي المروج
+  10100003084: { pieces: 7, points: 700, name: 'حي المصيف' }, // حي المصيف
+  
+  // منطقة ٦ - Easy difficulty districts
+  10100003051: { pieces: 6, points: 600, name: 'حي الملز' }, // حي الملز
+  10100003075: { pieces: 5, points: 500, name: 'حي العليا' }, // حي العليا
+  10100003033: { pieces: 4, points: 400, name: 'حي الفيصلية' }, // حي الفيصلية
+  
+  // منطقة ٧ - Easy difficulty districts
+  10100003095: { pieces: 3, points: 300, name: 'حي طيبة' }, // حي طيبة
+  10100003029: { pieces: 2, points: 200, name: 'حي العزيزية' }, // حي العزيزية
+  10100003130: { pieces: 1, points: 100, name: 'حي الدار البيضاء' } // حي الدار البيضاء
+};
+
+// Create blocks from the 7 Riyadh areas with districts
+const createRiyadhBlocks = () => {
+  const blocks = [];
+  
+  GAME_AREAS.forEach((area) => {
+    area.districtIds.forEach(districtId => {
+      const districtInfo = DISTRICT_POINTS[districtId];
+      if (districtInfo) {
+        blocks.push({
+          id: `district-${districtId}`,
+          name: districtInfo.name,
+          pieces: districtInfo.pieces,
+          points: districtInfo.points,
+          basePrice: 1000000 + (districtInfo.pieces * 50000),
+          districtId: districtId,
+          areaId: area.id,
+          areaName: area.name
+        });
+      }
+    });
+  });
+  
+  return blocks;
+};
+
 export const MAPS = {
   riyadh: {
     id: 'riyadh',
     name: 'الرياض',
     districts: [
       {
-        id: 'olaya',
-        name: 'العليا',
-        blocks: [
-          { id: 'olaya1', name: 'برج المملكة', pieces: 25, basePrice: 2000000 }, // 2500 points (hard)
-          { id: 'olaya2', name: 'طريق الملك فهد', pieces: 20, basePrice: 1800000 }, // 2000 points (hard)
-          { id: 'olaya3', name: 'شارع التحلية', pieces: 15, basePrice: 1600000 } // 1500 points (medium)
-        ]
-      },
-      {
-        id: 'malaz',
-        name: 'الملز',
-        blocks: [
-          { id: 'malaz1', name: 'منطقة الملعب', pieces: 12, basePrice: 1200000 }, // 1200 points (medium)
-          { id: 'malaz2', name: 'طريق الأمير فيصل', pieces: 8, basePrice: 1000000 }, // 800 points (easy)
-          { id: 'malaz3', name: 'وسط الملز', pieces: 6, basePrice: 900000 } // 600 points (easy)
-        ]
-      },
-      {
-        id: 'diriyah',
-        name: 'الدرعية',
-        blocks: [
-          { id: 'diriyah1', name: 'حي الطريف', pieces: 22, basePrice: 1700000 }, // 2200 points (hard)
-          { id: 'diriyah2', name: 'البجيري', pieces: 18, basePrice: 1500000 }, // 1800 points (hard)
-          { id: 'diriyah3', name: 'قرية التراث', pieces: 14, basePrice: 1400000 } // 1400 points (medium)
-        ]
-      },
-      {
-        id: 'nakheel',
-        name: 'النخيل',
-        blocks: [
-          { id: 'nakheel1', name: 'حدائق النخيل', pieces: 10, basePrice: 1100000 }, // 1000 points (medium)
-          { id: 'nakheel2', name: 'الوادي الأخضر', pieces: 7, basePrice: 950000 }, // 700 points (easy)
-          { id: 'nakheel3', name: 'ساحة النخيل', pieces: 5, basePrice: 1250000 } // 500 points (easy)
-        ]
-      },
-      {
-        id: 'diplomatic',
-        name: 'حي السفارات',
-        blocks: [
-          { id: 'dq1', name: 'شارع السفارات', pieces: 24, basePrice: 2200000 }, // 2400 points (hard)
-          { id: 'dq2', name: 'المنطقة الدولية', pieces: 23, basePrice: 2000000 }, // 2300 points (hard)
-          { id: 'dq3', name: 'حدائق الدبلوماسيين', pieces: 19, basePrice: 1850000 } // 1900 points (hard)
-        ]
-      },
-      {
-        id: 'hittin',
-        name: 'حطين',
-        blocks: [
-          { id: 'hittin1', name: 'حي النموذجية', pieces: 13, basePrice: 1300000 }, // 1300 points (medium)
-          { id: 'hittin2', name: 'شارع الأمير سلطان', pieces: 11, basePrice: 1100000 }, // 1100 points (medium)
-          { id: 'hittin3', name: 'مركز حطين التجاري', pieces: 4, basePrice: 1000000 } // 400 points (easy)
-        ]
-      },
-      {
-        id: 'yarmouk',
-        name: 'اليرموك',
-        blocks: [
-          { id: 'yarmouk1', name: 'حي الجامعات', pieces: 15, basePrice: 1400000 }, // 1500 points (medium)
-          { id: 'yarmouk2', name: 'مجمع اليرموك', pieces: 7, basePrice: 1200000 }, // 700 points (easy)
-          { id: 'yarmouk3', name: 'حديقة اليرموك', pieces: 3, basePrice: 1000000 } // 300 points (easy)
-        ]
+        id: 'riyadh-districts',
+        name: 'أحياء الرياض',
+        blocks: createRiyadhBlocks()
       }
     ]
   }
@@ -88,4 +95,29 @@ export const calculateBlockValue = (pieces, basePrice) => {
 
 export const calculateBlockPoints = (pieces) => {
   return pieces * 100;
+};
+
+// Get all districts in a specific area/group
+export const getDistrictsInArea = (areaId) => {
+  const area = GAME_AREAS.find(a => a.id === areaId);
+  if (!area) return [];
+  
+  return area.districtIds.map(districtId => {
+    const districtInfo = DISTRICT_POINTS[districtId];
+    if (districtInfo) {
+      return {
+        id: districtId,
+        name: districtInfo.name,
+        points: districtInfo.points,
+        pieces: districtInfo.pieces
+      };
+    }
+    return null;
+  }).filter(Boolean);
+};
+
+// Get area information for a district
+export const getAreaForDistrict = (districtId) => {
+  const area = GAME_AREAS.find(a => a.districtIds.includes(districtId));
+  return area ? { id: area.id, name: area.name } : null;
 };

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGame } from '../contexts/GameContext.jsx';
+import { formatMoney, formatNumber } from '../utils/formatters.js';
 
 function GameEnd() {
   const { state, dispatch } = useGame();
@@ -8,14 +9,6 @@ function GameEnd() {
   const sortedTeams = [...state.teams].sort((a, b) => b.score - a.score);
   const winner = sortedTeams[0];
   
-  const formatMoney = (amount) => {
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
   
   const getMedalEmoji = (position) => {
     switch (position) {
